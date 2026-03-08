@@ -2,6 +2,7 @@ import React, { useState } from "react";
 
 function Register() {
 
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -13,6 +14,16 @@ function Register() {
 
     setError("");
     setSuccess("");
+
+    if (!name) {
+      setError("Name is required");
+      return;
+    }
+
+    if (name.length < 3) {
+      setError("Name must be at least 3 characters");
+      return;
+    }
 
     if (!email) {
       setError("Email is required");
@@ -48,6 +59,7 @@ function Register() {
 
     setSuccess("User Registered Successfully!");
 
+    setName("");
     setEmail("");
     setPassword("");
     setConfirmPassword("");
@@ -65,6 +77,14 @@ function Register() {
       {success && (
         <div className="alert alert-success">{success}</div>
       )}
+
+      <input
+        type="text"
+        className="form-control mb-3"
+        placeholder="Enter name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
 
       <input
         type="email"

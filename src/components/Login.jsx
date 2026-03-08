@@ -2,6 +2,7 @@ import React, { useState } from "react";
 
 function Login({ setUser }) {
 
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -9,6 +10,16 @@ function Login({ setUser }) {
   const login = () => {
 
     setError("");
+
+    if (!name) {
+      setError("Name is required");
+      return;
+    }
+
+    if (name.length < 3) {
+      setError("Name must be at least 3 characters");
+      return;
+    }
 
     if (!email) {
       setError("Email is required");
@@ -44,6 +55,14 @@ function Login({ setUser }) {
       {error && (
         <div className="alert alert-danger">{error}</div>
       )}
+
+      <input
+        type="text"
+        className="form-control mb-3"
+        placeholder="Enter name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
 
       <input
         type="email"
