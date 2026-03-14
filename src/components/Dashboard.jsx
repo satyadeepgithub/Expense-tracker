@@ -1,22 +1,37 @@
 import React, { useState, useEffect } from "react";
 import AddExpense from "./expense/AddExpense";
+const BASE_URL = "http://localhost:8080";
 
 function Dashboard({ user, setUser }) {
 
   const [expenses, setExpenses] = useState([]);
+   const [error, setError] = useState("");
 
+  // Fetch expenses from backend on load
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem(user)) || [];
-    setExpenses(stored);
+    const fetchExpenses = async () => {
+      try {
+        const response = await fetch(`${BASE_URL}/expenses/${user}`);
+        if (!response.ok) { setError("Failed to load expenses"); return; }
+        const data = await response.json();
+        setExpenses(data);
+      } catch (err) {
+        setError("Something went wrong. Please try again.");
+      }
+    };
+    fetchExpenses();
   }, [user]);
 
-  const deleteExpense = (index) => {
-
-    const updated = expenses.filter((_, i) => i !== index);
-
-    setExpenses(updated);
-
-    localStorage.setItem(user, JSON.stringify(updated));
+ const deleteExpense = async (id) => {
+    try {
+      const response = await fetch(`${BASE_URL}/expenses/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) { setError("Failed to delete expense"); return; }
+      setExpenses(expenses.filter((exp) => exp.id !== id));
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+    }
   };
 
   const logout = () => {
@@ -65,26 +80,33 @@ function Dashboard({ user, setUser }) {
 
           <tbody>
 
-            {expenses.map((exp, index) => (
+            {expenses.length === 0 ? (
+                <tr>
+                    <td colSpan="4" className="text-center text-muted">
+                        No expenses found
+                    </td>
+                </tr>
+            ) : (expenses.map((exp, index) => (
 
-              <tr key={index}>
+                <tr key={index}>
 
-                <td>{exp.date}</td>
-                <td>₹ {exp.amount}</td>
-                <td>{exp.type}</td>
+                  <td>{exp.dateOfExpense}</td>
+                  <td>₹ {exp.amount}</td>
+                  <td>{exp.typeName}</td>
 
-                <td>
-                  <button
-                    className="btn btn-sm btn-danger"
-                    onClick={() => deleteExpense(index)}
-                  >
-                    Delete
-                  </button>
-                </td>
+                  <td>
+                    <button
+                      className="btn btn-sm btn-danger"
+                      onClick={() => deleteExpense(exp.id)}
+                    >
+                      Delete
+                    </button>
+                  </td>
 
-              </tr>
+                </tr>
 
-            ))}
+                ))
+            )}
 
           </tbody>
 

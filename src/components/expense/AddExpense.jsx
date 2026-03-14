@@ -1,18 +1,7 @@
 import React, { useState, useEffect } from "react";
+const BASE_URL = "http://localhost:8080";
 
 function AddExpense({ expenses, setExpenses, user }) {
-
-    useEffect(() => {
-
-        const stored = JSON.parse(localStorage.getItem(user)) || [];
-
-        const expenseTypes = stored.map(e => e.type);
-
-        const uniqueTypes = [...new Set([...types, ...expenseTypes])];
-
-        setTypes(uniqueTypes);
-
-    }, []);
 
   const [amount, setAmount] = useState("");
   const [type, setType] = useState("");
@@ -21,9 +10,22 @@ function AddExpense({ expenses, setExpenses, user }) {
   const [showNewType, setShowNewType] = useState(false);
   const [error, setError] = useState("");
 
-  const handleTypeChange = (e) => {
-    const value = e.target.value;
+  // Fetch types from backend on load
+  useEffect(() => {
+    const fetchTypes = async () => {
+      try {
+        const response = await fetch(`${BASE_URL}/types/${user}`);
+        const data = await response.json();
+        setTypes(data);
+      } catch (err) {
+        setError("Failed to load expense types");
+      }
+    };
+    fetchTypes();
+  }, []);
 
+ const handleTypeChange = (e) => {
+    const value = e.target.value;
     if (value === "addNew") {
       setShowNewType(true);
       setType("");
@@ -34,61 +36,62 @@ function AddExpense({ expenses, setExpenses, user }) {
     }
   };
 
-  const addNewType = () => {
+  const addNewType = async () => {
+    if (!newType.trim()) { setError("Enter new expense type"); return; }
+    if (types.find(t => t.name === newType.trim())) { setError("Type already exists"); return; }
 
-    if (!newType.trim()) {
-      setError("Enter new expense type");
-      return;
+    try {
+      const response = await fetch(`${BASE_URL}/types`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newType.trim(), email: user }),
+      });
+
+      if (!response.ok) { setError("Failed to add new type"); return; }
+
+      const savedType = await response.json();
+      setTypes([...types, savedType]);
+      setType(savedType.name);
+      setNewType("");
+      setShowNewType(false);
+      setError("");
+
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
     }
-
-    if (types.includes(newType.trim())) {
-      setError("Type already exists");
-      return;
-    }
-
-    const updatedTypes = [...types, newType.trim()];
-
-    setTypes(updatedTypes);
-    setType(newType.trim());
-
-    setNewType("");
-    setShowNewType(false);
-    setError("");
   };
 
-  const addExpense = () => {
-
-    if (!amount) {
-      setError("Please enter amount");
-      return;
-    }
-
-    if (!type) {
-      setError("Please select type");
-      return;
-    }
-
-    if (Number(amount) <= 0) {
-      setError("Amount must be greater than 0");
-      return;
-    }
+  const addExpense = async () => {
+    if (!amount) { setError("Please enter amount"); return; }
+    if (!type) { setError("Please select type"); return; }
+    if (Number(amount) <= 0) { setError("Amount must be greater than 0"); return; }
 
     setError("");
 
-    const newExpense = {
-      amount,
-      type,
-      date: new Date().toLocaleDateString(),
-    };
+    const selectedType = types.find(t => t.name === type);
 
-    const updated = [...expenses, newExpense];
+    try {
+      const response = await fetch(`${BASE_URL}/expenses`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount,
+          typeId: selectedType.id,
+          typeName:selectedType.name,
+          email: user,
+        }),
+      });
 
-    setExpenses(updated);
+      if (!response.ok) { setError("Failed to add expense"); return; }
 
-    localStorage.setItem(user, JSON.stringify(updated));
+      const savedExpense = await response.json();
+      setExpenses([...expenses, savedExpense]);
+      setAmount("");
+      setType("");
 
-    setAmount("");
-    setType("");
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+    }
   };
 
   return (
@@ -122,8 +125,8 @@ function AddExpense({ expenses, setExpenses, user }) {
             <option value="">Select Type</option>
 
             {types.map((t,index)=>(
-              <option key={index} value={t}>
-                {t}
+              <option key={index} value={t.name}>
+                {t.name}
               </option>
             ))}
 

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+const BASE_URL = "http://localhost:8080";
 
 function Register() {
 
@@ -10,7 +11,7 @@ function Register() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const register = () => {
+  const register =  async () => {
 
     setError("");
     setSuccess("");
@@ -57,12 +58,28 @@ function Register() {
       return;
     }
 
-    setSuccess("User Registered Successfully!");
+    try {
+      const response = await fetch(`${BASE_URL}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
 
-    setName("");
-    setEmail("");
-    setPassword("");
-    setConfirmPassword("");
+      if (!response.ok) {
+        const msg = await response.text();
+        setError(msg);
+        return;
+      }
+
+      setSuccess("User Registered Successfully!");
+      setName("");
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+    }
   };
 
   return (

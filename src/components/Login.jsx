@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+const BASE_URL = "http://localhost:8080";
 
 function Login({ setUser }) {
 
@@ -7,7 +8,7 @@ function Login({ setUser }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const login = () => {
+  const login = async () => {
 
     setError("");
 
@@ -43,8 +44,25 @@ function Login({ setUser }) {
       return;
     }
 
-    localStorage.setItem("user", email);
-    setUser(email);
+    try {
+      const response = await fetch(`${BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const msg = await response.text();
+        setError(msg);
+        return;
+      }
+
+      localStorage.setItem("user", email);
+      setUser(email);
+
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+    }
   };
 
   return (
